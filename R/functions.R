@@ -40,3 +40,33 @@ showgap <- function(d) {
   return(dgap)
 }
 
+#' fill gaps in times series with mean values
+#'
+#' @importFrom dplyr left_join mutate_if %>%
+#' @param d dataframe with times series
+#' @return dataframe
+#' @export
+fillgap <- function(d) {
+  data.length <- length(d$TIMESTAMP)
+  time.min <- d$TIMESTAMP[1]
+  time.max <- d$TIMESTAMP[data.length]
+  all.dates <-data.frame(TIMESTAMP =  seq(time.min, time.max, by="hour"))
+  dgap = left_join(all.dates,d) %>% mutate(rsum = rowSums(is.na(.))) %>%
+    mutate_if(is.numeric, funs(na.mean(.)))
+  return(dgap)
+}
+
+#' calculate daily mean
+#'
+#' @importFrom dplyr mutate select_if group_by summarise_all
+#' @importFrom lubridate year month day
+#' @param d dataframe with times series
+#' @return dataframe
+#' @export
+daily_mean <- function(d) {
+  d1 = d %>% mutate(ano = year(TIMESTAMP), mes = month(TIMESTAMP), dia = day(TIMESTAMP))
+  d.dia = d1 %>% select_if(is.numeric) %>% group_by(ano, mes, dia) %>%
+    summarise_all(.funs = mean)
+  return(d.dia)
+}
+
