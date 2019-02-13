@@ -1,0 +1,205 @@
+###PREPARACAO LABELS + PACOTES-----------------------------------------
+
+#install.packages("cusum")
+#install.packages("dualplot")
+#install.packages("Select")
+#install.packages("timeSeries")
+#install.packages("xts")
+#install.packages("tidyr")
+#install.packages("dplyr") 
+#install.packages("imputeTS") 
+#install.packages("lubridate") 
+#install.packages("ggplot2") 
+#install.packages("ggridges")
+#install.packages("tidyquant")
+#install.packages("timetk")
+
+
+library(cusum)
+library(dualplot)
+library(Select)
+library(timeSeries)
+library(xts)
+library(tidyr)
+library(dplyr)
+library(imputeTS)
+library(lubridate)
+library(ggplot2)
+library(ggridges)
+library(tidyquant)
+library(timetk)
+
+Sys.setenv( TZ="Etc/GMT-3")
+
+###FUNÇÕES________________
+## importa aquivo .dat
+4
+
+### mostra as leituras faltantes 
+showgap <- function(d) {
+  data.length <- length(d$TIMESTAMP)
+  time.min <- d$TIMESTAMP[1]
+  time.max <- d$TIMESTAMP[data.length]
+  all.dates <-data.frame(TIMESTAMP =  seq(time.min, time.max, by="hour")) 
+  dgap = dplyr::left_join(all.dates,d) %>% mutate(rsum = rowSums(is.na(.))) %>%  
+    filter(rsum > 0)
+  return(dgap)
+}
+
+## preenche as leituras faltantes com a media
+fillgap <- function(d) {
+  data.length <- length(d$TIMESTAMP)
+  time.min <- d$TIMESTAMP[1]
+  time.max <- d$TIMESTAMP[data.length]
+  all.dates <-data.frame(TIMESTAMP =  seq(time.min, time.max, by="hour")) 
+  dgap = dplyr::left_join(all.dates,d) %>% mutate(rsum = rowSums(is.na(.))) %>%  
+    mutate_if(is.numeric, funs(na.mean(.)))
+  return(dgap)
+}
+
+## calcula media diaria
+media_dia <- function(df) {
+  df = df %>% mutate(ano = year(TIMESTAMP), mes = month(TIMESTAMP), dia = day(TIMESTAMP))
+  d.dia = df %>% select_if(is.numeric) %>% group_by(ano, mes, dia) %>% 
+    summarise_all(.funs = mean)
+  return(d.dia)
+}
+
+## calcula media mensal
+media_mes <- function(df) {
+  df = df %>% mutate(ano = year(TIMESTAMP), mes = month(TIMESTAMP))
+  d.mes = df %>% select_if(is.numeric) %>% group_by(ano, mes) %>% summarise_all(.funs = mean)
+  return(d.mes)
+}
+
+## calcula media anual
+media_ano <- function(df) {
+  df = df %>% mutate(ano = year(TIMESTAMP))
+  d.ano = df %>% select_if(is.numeric) %>% group_by(ano) %>% summarise_all(.funs = mean)
+  return(d.ano)
+}
+
+## calcula dias isotermais e a familia toda
+## problema no calculo do freeze thaw days. Não entendi direito a condição para este caso.
+## Resultado 
+processa_temperatura <- function(timestamp, vt) { ## achar um nome melhor para esta função
+  
+  d = data.frame(timestamp, temperatura = vt) %>% 
+    mutate(timestamp = lubridate::as_datetime(timestamp)) %>% 
+    mutate(ano = year(timestamp), mes = month(timestamp), dia = day(timestamp))
+  
+  dg = d %>% mutate(temp_posit = ifelse(temperatura > 0,1, 0 )) %>%   
+    mutate(temp_negativ = ifelse(temperatura < 0, 1, 0 ))  %>% 
+    mutate(temp_maior_05 =  ifelse(temperatura > 0.5, 1, 0 )) %>% 
+    mutate(temp_menor_05 =  ifelse(temperatura < -0.5, 1, 0 )) %>% 
+    mutate(temp_isoterm =  ifelse(temperatura >= -0.5, ifelse(temperatura <= 0.5, 1, 0 ), 0)) 
+  
+  dsum_day = dg %>% group_by(ano,mes,dia) %>% 
+    summarise_at(c('temp_posit', 'temp_negativ', 'temp_maior_05', 
+                   'temp_menor_05', 'temp_isoterm'),  sum) %>% ungroup %>% 
+    mutate(thawing = ifelse(temp_posit == 24 & temp_maior_05 >= 1 , 1, 0)) %>% 
+    mutate(freezing = ifelse(temp_negativ == 24 & temp_menor_05 >= 1 , 1, 0)) %>% 
+    mutate(isotermal = ifelse(temp_isoterm == 24  , 1, 0)) %>% 
+    mutate(freezethaw = ifelse(temp_maior_05 >= 1  & temp_menor_05 >= 1 , 1, 0))
+  
+  dsum_day = dsum_day %>% group_by(ano, mes, dia) %>% summarise_all(funs(tot= sum)) %>% 
+    select(ano,mes,dia,thawing_tot:freezethaw_tot) %>% ungroup()
+  
+  dsum_month = dsum_day %>% select(-dia) %>% group_by(ano, mes) %>% summarise_all(funs(month = sum)) 
+  
+  dsum_year = dsum_day %>% select(-dia, -mes) %>% group_by(ano) %>% summarise_all(funs(year = sum)) 
+  return(list(tot_day = dsum_day, tot_month = dsum_month, tot_year = dsum_year))
+}
+
+##________________summarySE___________
+
+## Summarizes data.
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  library(plyr)
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  datac <- rename(datac, c("mean" = measurevar))
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
+
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+
