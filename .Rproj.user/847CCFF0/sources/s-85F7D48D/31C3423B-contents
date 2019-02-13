@@ -24,5 +24,21 @@ importCSdata = function(filename, RetOpt = "data"){
   }
 }
 
+#' show gaps in times series
+#'
+#' @importFrom dplyr left_join mutate filter %>%
+#' @param d dataframe with times series
+#' @return dataframe
+#' @export
+showgap <- function(d) {
+  data.length <- length(d$TIMESTAMP)
+  time.min <- d$TIMESTAMP[1]
+  time.max <- d$TIMESTAMP[data.length]
+  all.dates <- data.frame(TIMESTAMP =  seq(time.min, time.max, by="hour"))
+  dgap <- left_join(all.dates,d) %>% mutate(rsum = rowSums(is.na(.))) %>%
+    filter(rsum > 0)
+  return(dgap)
+}
+
 
 
