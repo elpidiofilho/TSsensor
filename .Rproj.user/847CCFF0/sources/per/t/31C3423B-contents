@@ -53,7 +53,7 @@ fillgap <- function(d) {
   time.max <- d$TIMESTAMP[data.length]
   all.dates <-data.frame(TIMESTAMP =  seq(time.min, time.max, by="hour"))
   dgap = left_join(all.dates,d) %>% mutate(rsum = rowSums(is.na(.))) %>%
-    mutate_if(is.numeric, funs(na.mean(.)))
+    mutate_if(is.numeric, funs(imputeTS::na.mean(.)))
   return(dgap)
 }
 

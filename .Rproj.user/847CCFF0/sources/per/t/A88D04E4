@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1550021376874.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2387492007",
+    "id" : "A88D04E4",
+    "lastKnownWriteTime" : 1550021369,
+    "last_content_update" : 1550021369,
+    "path" : "E:/Dropbox (Labgeo)/R/pacote/TSsensor/NAMESPACE",
+    "project_path" : "NAMESPACE",
+    "properties" : {
+        "cursorPosition" : "14,0",
+        "scrollLine" : "1"
+    },
+    "read_only" : true,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_namespace"
+}
