@@ -1,9 +1,9 @@
 Package: TSsensor
 Type: Package
 Title: Read and process data from Campbell dataloggers 
-Version: 0.1.0
+Version: 0.1.1
 Author: Elpidio Filho & Roberto Michel
-Maintainer: Elpidio Filho  <elpidio@ufv.brts>
+Maintainer: Elpidio Filho  <elpidio@ufv.br>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: MIT

@@ -43,6 +43,7 @@ showgap <- function(d) {
 #' fill gaps in times series with mean values
 #'
 #' @importFrom dplyr left_join mutate_if %>%
+#' @importFrom imputeTS na.mean
 #' @param d dataframe with times series
 #' @return dataframe
 #' @export
