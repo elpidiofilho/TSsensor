@@ -5,14 +5,14 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "1543817183",
+    "hash" : "0",
     "id" : "871FAE90",
-    "lastKnownWriteTime" : 1550067855,
-    "last_content_update" : 1550067855061,
+    "lastKnownWriteTime" : 1550073345,
+    "last_content_update" : 1550073345,
     "path" : "E:/Dropbox (Labgeo)/R/pacote/TSsensor/DESCRIPTION",
     "project_path" : "DESCRIPTION",
     "properties" : {
-        "cursorPosition" : "17,12",
+        "cursorPosition" : "18,0",
         "scrollLine" : "0"
     },
     "read_only" : false,

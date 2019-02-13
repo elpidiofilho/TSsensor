@@ -7,9 +7,9 @@
 tfif_days(timestamp, vt)
 }
 \arguments{
-\item{vt}{vector with time series}
+\item{timestamp}{vector with date values}
 
-\item{timestam}{vector with date values}
+\item{vt}{vector with time series}
 }
 \value{
 list

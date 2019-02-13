@@ -31,6 +31,7 @@ importCSdata = function(filename, RetOpt = "data"){
 #' @return dataframe
 #' @export
 showgap <- function(d) {
+  rsum = '.' =  NULL
   data.length <- length(d$TIMESTAMP)
   time.min <- d$TIMESTAMP[1]
   time.max <- d$TIMESTAMP[data.length]
@@ -42,12 +43,13 @@ showgap <- function(d) {
 
 #' fill gaps in times series with mean values
 #'
-#' @importFrom dplyr left_join mutate_if %>%
+#' @importFrom dplyr left_join mutate_if %>% funs
 #' @importFrom imputeTS na.mean
 #' @param d dataframe with times series
 #' @return dataframe
 #' @export
 fillgap <- function(d) {
+  '.'= NULL
   data.length <- length(d$TIMESTAMP)
   time.min <- d$TIMESTAMP[1]
   time.max <- d$TIMESTAMP[data.length]
@@ -65,6 +67,7 @@ fillgap <- function(d) {
 #' @return dataframe
 #' @export
 daily_mean <- function(d) {
+  TIMESTAMP = ano = mes = dia = NULL
   d1 = d %>% mutate(ano = year(TIMESTAMP), mes = month(TIMESTAMP), dia = day(TIMESTAMP))
   d.dia = d1 %>% select_if(is.numeric) %>% group_by(ano, mes, dia) %>%
     summarise_all(.funs = mean)
@@ -80,6 +83,7 @@ daily_mean <- function(d) {
 #' @return dataframe
 #' @export
 montly_mean <- function(d) {
+  TIMESTAMP = ano = mes = dia = NULL
   d1 = d %>% mutate(ano = year(TIMESTAMP), mes = month(TIMESTAMP))
   d.mes = d1 %>% select_if(is.numeric) %>% group_by(ano, mes) %>% summarise_all(.funs = mean)
   return(d.mes)
@@ -93,6 +97,7 @@ montly_mean <- function(d) {
 #' @return dataframe
 #' @export
 yearly_mean <- function(d) {
+  TIMESTAMP = ano = NULL
   d1 = d %>% mutate(ano = year(TIMESTAMP))
   d.ano = d1 %>% select_if(is.numeric) %>% group_by(ano) %>% summarise_all(.funs = mean)
   return(d.ano)
@@ -102,12 +107,13 @@ yearly_mean <- function(d) {
 #'
 #' @importFrom dplyr mutate select group_by summarise_all summarise_at ungroup
 #' @importFrom lubridate year month day as_datetime
-#' @param timestam vector with date values
+#' @param timestamp vector with date values
 #' @param vt vector with time series
 #' @return list
 #' @export
 tfif_days <- function(timestamp, vt) { ## achar um nome melhor para esta função
-
+  ano = mes = dia = temp_negativ = temp_maior_05 = temp_menor_05 = temp_isoterm = NULL
+  temperatura = temp_posit = thawing_tot = freezethaw_tot = NULL
   d = data.frame(timestamp, temperatura = vt) %>%
     mutate(timestamp = lubridate::as_datetime(timestamp)) %>%
     mutate(ano = year(timestamp), mes = month(timestamp), dia = day(timestamp))
@@ -134,3 +140,5 @@ tfif_days <- function(timestamp, vt) { ## achar um nome melhor para esta funçã
   dsum_year = dsum_day %>% select(-dia, -mes) %>% group_by(ano) %>% summarise_all(funs(year = sum))
   return(list(tot_day = dsum_day, tot_month = dsum_month, tot_year = dsum_year))
 }
+
+
